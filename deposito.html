@@ -60,7 +60,7 @@
           </svg>
         </div>
         <div>
-          <div class="text-xs font-semibold uppercase tracking-wider text-sky-400">Painel TV Depósito</div>
+          <div class="text-xs font-semibold uppercase tracking-wider text-sky-400">Cast Móveis Planejados</div>
           <div class="text-sm font-bold tracking-tight text-white leading-tight">Controle Logístico</div>
         </div>
       </div>
@@ -73,38 +73,6 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-10.5z"/>
           </svg>
           <span>Visão Geral</span>
-        </button>
-
-        <button id="nav-etapas" type="button" data-view="etapas"
-                class="nav-view-btn text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-          <span>Tempos por Etapa</span>
-        </button>
-
-        <button id="nav-montadores" type="button" data-view="montadores"
-                class="nav-view-btn text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-          </svg>
-          <span>Eficiência & Montagem</span>
-        </button>
-
-        <button id="nav-gargalos" type="button" data-view="gargalos"
-                class="nav-view-btn text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <span>Prazos & Gargalos</span>
-        </button>
-
-        <button id="nav-lojas" type="button" data-view="lojas"
-                class="nav-view-btn text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <span>Lojas & Perfil</span>
         </button>
 
         <button id="nav-contratos" type="button" data-view="contratos"
@@ -348,12 +316,12 @@
         </div>
       </div>
 
-      <!-- Chart 2: Volumes por Montador (Horizontal Bars) -->
+      <!-- Chart 2: Contratos Montados por Montador (Horizontal Bars) -->
       <div class="card-panel p-4 lg:col-span-4 flex flex-col">
         <div class="flex items-center justify-between mb-2">
           <div>
-            <h2 class="text-sm font-bold text-slate-800">Volumes Atribuídos por Montador</h2>
-            <p class="text-[11px] text-slate-500">Quantidade de volumes nos contratos filtrados</p>
+            <h2 class="text-sm font-bold text-slate-800">Contratos Montados por Montador</h2>
+            <p class="text-[11px] text-slate-500">Quantidade de contratos por montador nos filtros selecionados</p>
           </div>
         </div>
         <div class="relative h-60 w-full mt-auto">
@@ -880,17 +848,37 @@
         }
       });
 
-      // 2. Horizontal Bar Chart: Volumes by Montador
+      // 2. Horizontal Bar Chart: Contratos Montados por Montador
+      const formatMontadorLabel = (name) => {
+        if (!name) return "A Definir";
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 3 && ["E", "DE", "DA", "DO", "DOS"].includes(parts[1].toUpperCase())) {
+          return parts.slice(0, 3).join(" ");
+        }
+        return parts.slice(0, 2).join(" ");
+      };
+
       const montMap = {};
       rows.forEach(r => {
-        const key = r.montador ? r.montador.split(" ").slice(0, 2).join(" ") : "A Definir";
         if (r.montador) {
-          montMap[key] = (montMap[key] || 0) + (r.volumes || 1);
+          const key = formatMontadorLabel(r.montador);
+          if (!montMap[key]) {
+            montMap[key] = { total: 0, finalizados: 0, emMontagem: 0, volumes: 0 };
+          }
+          montMap[key].total += 1;
+          if (r.etapa === "FINALIZADO") {
+            montMap[key].finalizados += 1;
+          } else {
+            montMap[key].emMontagem += 1;
+          }
+          montMap[key].volumes += (r.volumes || 0);
         }
       });
-      const montEntries = Object.entries(montMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const montEntries = Object.entries(montMap)
+        .sort((a, b) => (b[1].total - a[1].total) || (b[1].finalizados - a[1].finalizados))
+        .slice(0, 10);
       if (!montEntries.length) {
-        montEntries.push(["Sem Montador", 0]);
+        montEntries.push(["Sem Montador", { total: 0, finalizados: 0, emMontagem: 0, volumes: 0 }]);
       }
 
       if (charts.montadores) charts.montadores.destroy();
@@ -898,19 +886,54 @@
         type: "bar",
         data: {
           labels: montEntries.map(e => e[0]),
-          datasets: [{
-            label: "Volumes",
-            data: montEntries.map(e => e[1]),
-            backgroundColor: ["#0f3f7a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"],
-            borderRadius: 4
-          }]
+          datasets: [
+            {
+              label: "Montados (Finalizados)",
+              data: montEntries.map(e => e[1].finalizados),
+              backgroundColor: "#1d4ed8",
+              borderRadius: 4
+            },
+            {
+              label: "Em Montagem",
+              data: montEntries.map(e => e[1].emMontagem),
+              backgroundColor: "#93c5fd",
+              borderRadius: 4
+            }
+          ]
         },
         options: {
           indexAxis: "y",
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { beginAtZero: true } }
+          plugins: {
+            legend: {
+              display: true,
+              position: "top",
+              labels: { boxWidth: 10, font: { size: 10 } }
+            },
+            tooltip: {
+              callbacks: {
+                afterBody: (items) => {
+                  const idx = items[0]?.dataIndex;
+                  const entry = montEntries[idx]?.[1];
+                  if (!entry) return "";
+                  return `Total: ${entry.total} contrato(s) (${entry.volumes} vol.)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { precision: 0, stepSize: 1, font: { size: 10 } },
+              title: { display: true, text: "Nº de Contratos", font: { size: 10 } }
+            },
+            y: {
+              stacked: true,
+              ticks: { autoSkip: false, font: { size: 10 } }
+            }
+          }
         }
       });
 
